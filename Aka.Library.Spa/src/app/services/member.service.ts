@@ -1,13 +1,12 @@
-import { Member } from './../members/interfaces/member';
-import { Injectable } from '@angular/core';
-import { environment } from '../../environments/environment';
-import { Observable } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
-import { SignedOutBook } from '../shared/signed-out-book';
+import { Member } from "./../members/interfaces/member";
+import { Injectable } from "@angular/core";
+import { environment } from "../../environments/environment";
+import { Observable } from "rxjs";
+import { HttpClient } from "@angular/common/http";
+import { SignedOutBook } from "../shared/signed-out-book";
 
 @Injectable()
 export class MemberService {
-
   apiUrl: string;
 
   constructor(private http: HttpClient) {
@@ -30,11 +29,16 @@ export class MemberService {
     return this.http.put<Member>(`${this.apiUrl}/${member.memberId}`, member);
   }
 
-  getSignedOutBooks(member: Member): Observable<SignedOutBook []> {
-    return this.http.get<SignedOutBook[]>(`${this.apiUrl}/${member.memberId}/books/signedOut`);
+  getSignedOutBooks(member: Member): Observable<SignedOutBook[]> {
+    console.log(`${this.apiUrl}/${member.memberId}/books/signedOut`);
+    return this.http.get<SignedOutBook[]>(
+      `${this.apiUrl}/${member.memberId}/books/signedOut`
+    );
   }
 
-  getMemberBookHistory(member: Member): Observable<SignedOutBook []> {
-    return this.http.get<SignedOutBook[]>(`${this.apiUrl}/${member.memberId}/books/history`);
+  getMemberBookHistory(member: Member): Observable<SignedOutBook[]> {
+    return this.http.get<SignedOutBook[]>(
+      `${this.apiUrl}/${member.memberId}/books/history`
+    );
   }
 }

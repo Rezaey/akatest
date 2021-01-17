@@ -1,32 +1,32 @@
-import { BooksService } from '../../services/books.service';
-import { forkJoin, throwError, Subscription } from 'rxjs';
-import { map, catchError, tap, take } from 'rxjs/operators';
-import { Book } from '../../shared/book';
-import { Component, OnInit, HostBinding } from '@angular/core';
-import { ActivatedRoute, ParamMap } from '@angular/router';
-import { find, filter } from 'lodash';
-import { AuthService } from '../../services/auth.service';
-import { MemberService } from '../../services/member.service';
-import { slideInDownAnimation } from '../../animations';
-import { GoogleBooksMetadata } from '../../shared/google-books-metadata';
+import { BooksService } from "../../services/books.service";
+import { forkJoin, throwError, Subscription } from "rxjs";
+import { map, catchError, tap, take } from "rxjs/operators";
+import { Book } from "../../shared/book";
+import { Component, OnInit, HostBinding } from "@angular/core";
+import { ActivatedRoute, ParamMap } from "@angular/router";
+import { find, filter } from "lodash";
+import { AuthService } from "../../services/auth.service";
+import { MemberService } from "../../services/member.service";
+import { slideInDownAnimation } from "../../animations";
+import { GoogleBooksMetadata } from "../../shared/google-books-metadata";
 
 @Component({
-  selector: 'app-book-details',
-  templateUrl: './book-details.component.html',
-  styleUrls: ['./book-details.component.scss'],
-  animations: [slideInDownAnimation]
+  selector: "app-book-details",
+  templateUrl: "./book-details.component.html",
+  styleUrls: ["./book-details.component.scss"],
+  animations: [slideInDownAnimation],
 })
 export class BookDetailsComponent implements OnInit {
-  @HostBinding('@routeAnimation') routeAnimation = true;
-  @HostBinding('class.book-details') cssClass = true;
-  @HostBinding('style.display') display = 'block';
-  @HostBinding('style.position') position = 'initial';
+  @HostBinding("@routeAnimation") routeAnimation = true;
+  @HostBinding("class.book-details") cssClass = true;
+  @HostBinding("style.display") display = "block";
+  @HostBinding("style.position") position = "initial";
 
   bookSubscription: Subscription;
   book: Book;
   numBooksSignedOut: number;
   numBooksAvailable: number;
-  bookMetadata: GoogleBooksMetadata;
+  bookMetadata: GoogleBooksMetadata[];
   numOfThisBookSignedOutByUser: number;
 
   constructor(
@@ -34,15 +34,14 @@ export class BookDetailsComponent implements OnInit {
     private books: BooksService,
     private authService: AuthService,
     private memberService: MemberService
-  ) { }
+  ) {}
 
   ngOnInit() {
-    this.route.paramMap
-      .subscribe((params: ParamMap) => {
-        const libraryId = +params.get('lid');
-        const bookId = +params.get('id');
-        this.getBookDetails(libraryId, bookId);
-      });
+    this.route.paramMap.subscribe((params: ParamMap) => {
+      const libraryId = +params.get("lid");
+      const bookId = +params.get("id");
+      this.getBookDetails(libraryId, bookId);
+    });
   }
 
   /**
@@ -58,26 +57,32 @@ export class BookDetailsComponent implements OnInit {
 
   checkOutBook() {
     const params = this.route.snapshot.paramMap;
-    this.books.checkOutBook(+params.get('lid'), +params.get('id'), this.authService.currentMember.memberId)
-      .pipe(
-        take(1)
+    this.books
+      .checkOutBook(
+        +params.get("lid"),
+        +params.get("id"),
+        this.authService.currentMember.memberId
       )
+      .pipe(take(1))
       .subscribe(() => {
-        const libraryId = +params.get('lid');
-        const bookId = +params.get('id');
+        const libraryId = +params.get("lid");
+        const bookId = +params.get("id");
         this.getBookDetails(libraryId, bookId);
       });
   }
 
   returnBook() {
     const params = this.route.snapshot.paramMap;
-    this.books.returnBook(+params.get('lid'), +params.get('id'), this.authService.currentMember.memberId)
-      .pipe(
-        take(1)
+    this.books
+      .returnBook(
+        +params.get("lid"),
+        +params.get("id"),
+        this.authService.currentMember.memberId
       )
+      .pipe(take(1))
       .subscribe(() => {
-        const libraryId = +params.get('lid');
-        const bookId = +params.get('id');
+        const libraryId = +params.get("lid");
+        const bookId = +params.get("id");
         this.getBookDetails(libraryId, bookId);
       });
   }
@@ -93,29 +98,61 @@ export class BookDetailsComponent implements OnInit {
     forkJoin([
       this.books.getBook(libraryId, bookId),
       this.books.getNumberOfAvailableBookCopies(libraryId, bookId),
-      this.memberService.getSignedOutBooks(this.authService.currentMember)
-    ]).pipe(
-      take(1),
-      tap(([book, numberOfAvailableCopies, signedOutBooks]) => {
-        this.numBooksSignedOut = signedOutBooks.length;
-        this.numBooksAvailable = numberOfAvailableCopies;
-        this.numOfThisBookSignedOutByUser = filter(signedOutBooks, (signedOutBook) => signedOutBook.bookId === book.bookId).length;
-        const isbn = book.isbn;
-        this.books.getBookMetaData(isbn)
-          .pipe(take(1))
-          .subscribe((bookMetadata: GoogleBooksMetadata) => {
-            this.bookMetadata = bookMetadata;
+      this.memberService.getSignedOutBooks(this.authService.currentMember),
+    ])
+      .pipe(
+        take(1),
+        tap(([book, numberOfAvailableCopies, signedOutBooks]) => {
+          console.log("book");
+          this.numBooksSignedOut = signedOutBooks.length;
+          this.numBooksAvailable = numberOfAvailableCopies;
+          this.numOfThisBookSignedOutByUser = filter(
+            signedOutBooks,
+            (signedOutBook) => signedOutBook.bookId === book.bookId
+          ).length;
+          const isbn = book.isbn;
+          this.books
+            .getBookMetaData(isbn)
+            .pipe(take(1))
+            .subscribe((bookMetadata: any) => {
+              console.log(bookMetadata);
+              if (bookMetadata.items) {
+                const googleBooks: GoogleBooksMetadata[] = [];
+                bookMetadata.items.forEach((book) => {
+                  googleBooks.push({
+                    authors: book.volumeInfo.authors,
+                    description: book.volumeInfo.description,
+                    imageLinks: {
+                      thumbnail: book.volumeInfo.imageLinks
+                        ? book.volumeInfo.imageLinks.thumbnail
+                        : "",
+                      smallThumbnail: book.volumeInfo.imageLinks
+                        ? book.volumeInfo.imageLinks.smallThumbnail
+                        : "",
+                    },
+                  });
+                });
+                this.bookMetadata = googleBooks;
+              }
+            });
+        }),
+        map(([book, numberOfAvailableCopies, signedOutBooks]) => {
+          const areBooksAvailable = numberOfAvailableCopies > 0;
+          const hasUserCheckedThisBookOut = !!find(signedOutBooks, {
+            bookId: book.bookId,
           });
-      }),
-      map(([book, numberOfAvailableCopies, signedOutBooks]) => {
-        const areBooksAvailable = numberOfAvailableCopies > 0;
-        const hasUserCheckedThisBookOut = !!find(signedOutBooks, { bookId: book.bookId });
-        return { ...book, isAvailable: areBooksAvailable, isCheckedOut: hasUserCheckedThisBookOut };
-      }),
-      catchError(err => {
-        return throwError(err);
-      })
-    );
+          return {
+            ...book,
+            isAvailable: areBooksAvailable,
+            isCheckedOut: hasUserCheckedThisBookOut,
+          };
+        }),
+        catchError((err) => {
+          return throwError(err);
+        })
+      )
+      .subscribe((book: Book) => {
+        this.book = book;
+      });
   }
-
 }

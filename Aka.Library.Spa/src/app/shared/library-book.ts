@@ -1,6 +1,7 @@
-import { Book } from './book';
+import { Book } from "./book";
 export interface LibraryBook {
-    libraryId: number;
-    totalPurchasedByLibrary: number;
-    book: Book;
+  libraryId: number;
+  totalPurchasedByLibrary: number;
+  book: Book;
+  total?: number;
 }
